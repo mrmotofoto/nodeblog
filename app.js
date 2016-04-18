@@ -1,16 +1,25 @@
-var express = require('express');
-var path = require('path');
-var favicon = require('serve-favicon');
-var logger = require('morgan');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
+var express           = require('express');
+var path              = require('path');
+var favicon           = require('serve-favicon');
+var logger            = require('morgan');
+var cookieParser      = require('cookie-parser');
+var bodyParser        = require('body-parser');
+var session           = require('express-session');
+var multer            = require('multer');
+var upload            = multer({dest: 'uploads/'});
+var moment            = require('moment');
+var expressValidator  = require('express-validator');
+var mongoose = require('mongoose');
+var mongo = require('mongodb');
+mongoose.connect("mongodb://localhost/nodeblog");
+//var db = require('monk')('localhost/nodeblog');
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
 
 var app = express();
 
-// view engine setup
+// view engine setup---------------------------------------
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
@@ -21,6 +30,44 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// EXPRESS SESSION
+app.use(session({
+  secret: 'secret',
+  saveUninitialized: true,
+  resave: false
+}));
+
+//EXPRESS VALIDATOR
+app.use(expressValidator({
+  errorFormatter: function(param, msg, value) {
+    var namespace = param.split('.'),
+        root      = namespace.shift(),
+        formParam = root;
+
+        while(namespace.length) {
+          formParam += '[' + namespace.shift() + ']';
+        }
+        return {
+          param: formParam,
+          msg: msg,
+          value: value
+        };
+    }
+}));
+
+//CONNECT-FLASH
+app.use(require('connect-flash')());
+app.use(function(req, res, next) {
+  res.locals.messages = require('express-messages')(req, res);
+  next();
+});
+
+//MAKE DB ACCESIBLE TO THE ROUTER
+// app.use(function(req, res,next) {
+//   req.db = db;
+//   next();
+// });
 
 app.use('/', routes);
 app.use('/users', users);

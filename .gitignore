@@ -1,0 +1,7 @@
+#logs
+logs
+*.log
+npm-dug.log
+
+#depend dir
+node_modules
